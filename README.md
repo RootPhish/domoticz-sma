@@ -22,10 +22,11 @@ docker create \
 docker start domoticz
 ```
 
-**Enter container and copy the SBFspot config file**
+**Enter container and copy end edit the SBFspot config file**
 ```
 docker exec -it domoticz /bin/sh
 cp /opt/sbfspot/SBFspot.cfg /config
+vi /config/SBFspot.cfg
 ```
 
 **Still in the container, add the cronjob**
