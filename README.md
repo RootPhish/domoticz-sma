@@ -4,7 +4,6 @@ domoticz-sma
 ##How to use
 
 **Create container**
-
 ```
 docker create \
   --name=domoticz \
@@ -18,4 +17,19 @@ docker create \
   domoticz-sma
 ```
 
+**Start container**
+```
+docker start domoticz
+```
 
+**Enter container and copy the SBFspot config file**
+```
+docker exec -it domoticz /bin/sh
+cp /opt/sbfspot/SBFspot.cfg /config
+```
+
+**Still in the container, add the cronjob**
+```
+crontab -e
+* * * * * /opt/sbfspot/SBFspot -v -cfg/config/SBFspot.cfg > /dev/null
+```
