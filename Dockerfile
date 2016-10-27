@@ -1,84 +1,15 @@
-FROM alpine:latest
-MAINTAINER Sylvain Desbureaux <sylvain@desbureaux.fr>
+FROM sdesbure/domoticz:latest
 
-# install packages &
-## OpenZwave installation &
-# grep git version of openzwave &
-# untar the files &
-# compile &
-# "install" in order to be found by domoticz &
-## Domoticz installation &
-# clone git source in src &
-# Domoticz needs the full history to be able to calculate the version string &
-# prepare makefile &
-# compile &
-# remove git and tmp dirs
+RUN apk add --no-cache sqlite \
+                       sqlite-dev \
+                       make \
+                       boost-dev \
+                       g++ \
+                       bluez-dev
 
-ARG VCS_REF
-ARG BUILD_DATE
+ADD dist/SBFspot*.tar.gz /SBFspot/sbfspot.3/
+ADD dist/misc.patch /SBFspot/sbfspot.3/misc.patch
 
-ENV SBFSPOTDIR /opt/sbfspot
-ENV SMADATA /var/smadata
-
-LABEL org.label-schema.vcs-ref=$VCS_REF \
-      org.label-schema.vcs-url="https://github.com/domoticz/domoticz" \
-      org.label-schema.url="https://domoticz.com/" \
-      org.label-schema.name="Domoticz" \
-      org.label-schema.docker.dockerfile="/Dockerfile" \
-      org.label-schema.license="GPLv3" \
-      org.label-schema.build-date=$BUILD_DATE
-
-RUN apk add --no-cache git \
-	 git \
-	 libssl1.0 openssl-dev \
-	 build-base cmake \
-	 boost-dev \
-	 boost-thread \
-	 boost-system \
-	 boost-date_time \
-	 sqlite sqlite-dev \
-	 curl libcurl curl-dev \
-	 libusb libusb-dev \
-	 coreutils \
-	 zlib zlib-dev \
-	 udev eudev-dev \
-         bluez-dev \
-	 linux-headers && \
-	 git clone --depth 2 https://github.com/OpenZWave/open-zwave.git /src/open-zwave && \
-	 cd /src/open-zwave && \
-	 make && \
-	 ln -s /src/open-zwave /src/open-zwave-read-only && \
-	 git clone --depth 2 https://github.com/domoticz/domoticz.git /src/domoticz && \
-	 cd /src/domoticz && \
-	 git fetch --unshallow && \
-	 cmake -DCMAKE_BUILD_TYPE=Release . && \
-	 make && \
-	 rm -rf /src/domoticz/.git && \
-	 rm -rf /src/open-zwave/.git
-
-ADD dist/SBFspot*.tar.gz /sbfspot.3
-COPY dist/misc.patch /sbfspot.3/misc.patch
-
-WORKDIR /sbfspot.3/SBFspot
+WORKDIR /SBFspot/sbfspot.3/SBFspot
 RUN patch -p1 -i ../misc.patch
 RUN make install_sqlite
-
-WORKDIR /
-
-RUN mkdir -p $SBFSPOTDIR && \
-    mkdir -p $SMADATA
-
-RUN mv /usr/local/bin/sbfspot.3/* $SBFSPOTDIR && \
-    cp /sbfspot.3/SBFspot/CreateSQLiteDB.sql $SBFSPOTDIR && \
-    rm -rf /sbfspot.3
-
-RUN sqlite3 $SMADATA/SBFspot.db < $SBFSPOTDIR/CreateSQLiteDB.sql
-
-RUN apk del git cmake linux-headers libusb-dev zlib-dev openssl-dev boost-dev sqlite-dev build-base eudev-dev coreutils curl-dev
-
-VOLUME /config
-
-EXPOSE 8080
-
-ENTRYPOINT ["/src/domoticz/domoticz", "-dbase", "/config/domoticz.db", "-log", "/config/domoticz.log"]
-CMD ["-www", "8080"]
