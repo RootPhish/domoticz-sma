@@ -28,9 +28,3 @@ docker exec -it domoticz /bin/sh
 cp /opt/sbfspot/SBFspot.cfg /config
 vi /config/SBFspot.cfg
 ```
-
-**Still in the container, add the cronjob**
-```
-crontab -e
-* * * * * /opt/sbfspot/SBFspot -v -cfg/config/SBFspot.cfg > /dev/null
-```
